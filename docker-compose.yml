@@ -1,0 +1,40 @@
+version: '2.1'
+
+services:
+  employee_db_server:
+    image: mysql:5.7
+    container_name: employee_db_server
+    command:
+      [
+        mysqld,
+        --character-set-server=utf8,
+        --collation-server=utf8_general_ci,
+        --event_scheduler=on
+      ]
+    volumes:
+      - ./db/setup.sql:/docker-entrypoint-initdb.d/setup.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: employees
+      TZ: "Asia/Shanghai"
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: mysqladmin -uroot -p123456 ping
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    networks:
+      - default
+
+  employee_management_Server:
+    build: .
+    image: node:employeeManagementServer
+    container_name: employee_management_server
+    ports:
+      - "8080:8000"
+    depends_on:
+      employee_db_server:
+        condition: service_healthy
+    networks:
+      - default
